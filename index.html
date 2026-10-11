@@ -78,7 +78,9 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
 .mapbox{position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);height:min(62vh,520px);touch-action:none;user-select:none;-webkit-user-select:none}
 .mapbox svg{width:100%;height:100%;display:block;cursor:grab}
 .mapbox .q{fill:rgba(255,255,255,0);stroke:#0F1613;stroke-width:3;stroke-linejoin:round;cursor:pointer;transition:fill .15s}
-.mapbox .q.pend{fill:url(#hatch);stroke:#D9534A;stroke-width:4}
+.mapbox .q.done{fill:rgba(14,124,90,.42);stroke:#0B4A34;stroke-width:4}
+.mapbox .q.pend{fill:rgba(255,255,255,0)}
+.pendlist span.ok{background:var(--acc-soft);color:#0B4A34}
 .mapbox .qn{font-family:var(--font);font-weight:800;font-size:26px;fill:#0F1613;stroke:#fff;stroke-width:7;paint-order:stroke;stroke-linejoin:round;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .mapbox .lbl text{font-family:'Roboto Condensed','Arial Narrow',sans-serif;font-weight:700;fill:#0F1613;stroke:#fff;stroke-linejoin:round;paint-order:stroke;pointer-events:none}
 .mapbox .hint{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(15,22,19,.78);color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:999px;text-align:center;pointer-events:none}
@@ -89,7 +91,7 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
 .panel .info{font-size:13.5px;color:var(--text)}
 .panel .info small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .pendlist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.pendlist span{background:#FBE6E4;color:#9b2f27;border-radius:99px;padding:4px 10px;font-size:12.5px;font-weight:800}
+.pendlist span{background:var(--surface2);color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:12.5px;font-weight:800}
 .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .wide{width:100%;justify-content:center;padding:13px}
 .donebox{background:var(--acc-soft);border:1px solid #BFE3D1;border-radius:var(--r2);padding:12px 14px;font-size:13.5px;color:#0B4A34;margin-top:12px;font-weight:600}
@@ -127,21 +129,18 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-<section class="gate" id="gate">
+<section class="gate hide" id="gate">
   <div class="gbox">
     <h1>Dirigente</h1>
-    <p class="note" style="margin:0">Seus territórios designados, com o mapa de cada um para marcar as quadras que faltaram e concluir.</p>
-    <input id="codeIn" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="código" autocomplete="one-time-code">
-    <div class="err" id="gateMsg">Digite o código de 6 números que o administrador enviou.</div>
-    <button class="btn primary" id="codeGo">Entrar</button>
-    <p class="note">Depois da primeira entrada o app abre direto, mesmo sem internet.</p>
+    <p class="note" style="margin:0 0 10px">Aqui aparecem os territórios que o administrador enviar para você, com o mapa de cada um para marcar as quadras feitas e concluir.</p>
+    <div class="err" id="gateMsg" style="color:var(--muted)">Nenhum território recebido ainda. Abra o link que o administrador mandou pelo WhatsApp: o território entra aqui sozinho.</div>
+    <button class="btn primary hide" id="gateRetry">Tentar de novo</button>
   </div>
 </section>
 <div class="top" id="top">
   <div class="bar" id="barHome">
     <span class="logo">D</span>
-    <div class="ttl"><b id="hName">—</b><small id="hCong">Dirigente de campo</small></div>
-    <button class="iconbtn" id="btnOut" aria-label="Sair"><svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 3v18"/></svg></button>
+    <div class="ttl"><b id="hName">Dirigente</b><small id="hCong">Territórios recebidos</small></div>
   </div>
   <div class="bar hide" id="barSub">
     <button class="iconbtn" id="btnBack" aria-label="Voltar"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -154,23 +153,23 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
   <div class="eyebrow">Designados a você</div><h1>Territórios</h1>
   <div class="instbox hide" id="instbox"><button class="x" id="instX" aria-label="Fechar">×</button><b>Instale o app no celular</b><p id="instTxt">Fica na tela inicial, abre em tela cheia e funciona sem internet.</p><button class="btn" id="instBtn">Instalar o app</button></div>
   <div class="tlist" id="tlist"></div>
-  <p class="note">Toque no território para abrir o mapa. Quando o administrador designar um território a você, ele aparece aqui.</p>
+  <p class="note">Toque no território para abrir o mapa. Cada link que o administrador enviar acrescenta o território aqui; <button id="btnForget" style="color:var(--acc);font-weight:700">limpar os concluídos</button>.</p>
 </div></section>
 
 <section class="screen" id="scTerr"><div class="wrap">
   <div class="mapbox" id="mapbox">
     <svg id="map" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="14" height="14" fill="rgba(217,83,74,.22)"/><line x1="0" y1="0" x2="0" y2="14" stroke="#D9534A" stroke-width="3"/></pattern></defs><image id="base" href="mapa-base.webp" x="0" y="0" width="6000" height="1717"/><g class="lbl" id="lbl"></g><g id="qs"></g><g id="qn"></g></svg>
     <div class="zc"><button id="zIn" aria-label="Aproximar">+</button><button id="zOut" aria-label="Afastar">−</button><button id="zFit" aria-label="Enquadrar" style="font-size:15px">⤢</button></div>
-    <div class="hint" id="hint">Toque numa quadra para marcar que ela ficou pendente</div>
+    <div class="hint" id="hint">Toque nas quadras que você já fez</div>
   </div>
-  <div class="panel"><h3>Quadras pendentes <span id="pendN" style="font-weight:600;letter-spacing:0;text-transform:none"></span></h3><div class="pendlist" id="pendList"></div><div class="info" id="tInfo" style="margin-top:8px"></div></div>
+  <div class="panel"><h3>Quadras <span id="pendN" style="font-weight:600;letter-spacing:0;text-transform:none"></span></h3><div class="pendlist" id="pendList"></div><div class="info" id="tInfo" style="margin-top:8px"></div></div>
   <div id="doneBox" class="donebox hide"></div>
   <div class="acts" id="tActs">
     <button class="btn primary wide" id="btnDone"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Território concluído</button>
     <button class="btn" id="btnMaps" style="flex:1;justify-content:center"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg>Google Maps</button>
     <button class="btn hide" id="btnCards" style="flex:1;justify-content:center">Cartões de casas</button>
   </div>
-  <p class="note">As quadras marcadas e a conclusão vão direto para o administrador.</p>
+  <p class="note">As quadras feitas e a conclusão vão direto para o administrador.</p>
 </div></section>
 
 <div class="modal" id="askmodal"><div class="box2"><div class="grip"></div><p id="askMsg"></p><div class="acts" id="askActs"></div></div></div>
@@ -180,6 +179,7 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
 <script>
 const $=id=>document.getElementById(id);
 const WANT_INST=/[?&]instalar=1/.test(location.search);
+let LINK_TOK=null; try{ const t=new URLSearchParams(location.search).get('t'); if(t&&/^[a-z0-9]{6,24}$/i.test(t)) LINK_TOK=t; }catch(e){}
 const pad2=k=>String(k).padStart(2,'0');
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const today=()=>iso(new Date());
@@ -200,7 +200,6 @@ const NAV={stack:[],ignore:0,backs:0,queue:0};
 function navPush(close){ NAV.stack.push(close); if(NAV.backs>0) NAV.queue++; else { try{ history.pushState({n:1},''); }catch(e){} } }
 function navPop(){ NAV.stack.pop(); if(history.state&&history.state.n>0&&NAV.backs===0){ NAV.ignore++; NAV.backs++; history.back(); } else if(NAV.queue>0){ NAV.queue--; } }
 function navBack(){ const top=NAV.stack[NAV.stack.length-1]; if(top){ NAV.stack.pop(); if(history.state&&history.state.n>0&&NAV.backs===0){ NAV.ignore++; NAV.backs++; history.back(); } else if(NAV.queue>0){ NAV.queue--; } top(); } }
-let DEEP=null; try{ const t=new URLSearchParams(location.search).get('t'); if(t&&/^\d+$/.test(t)) DEEP=String(+t); }catch(e){}
 try{ history.replaceState({n:-1},'',location.pathname+location.hash); history.pushState({n:0},''); }catch(e){}
 addEventListener('popstate',()=>{ if(NAV.ignore){ NAV.ignore--; NAV.backs=Math.max(0,NAV.backs-1); while(NAV.queue>0){ NAV.queue--; history.pushState({n:1},''); } return; } const c=NAV.stack.pop(); if(!c||!history.state||history.state.n<0){ history.pushState({n:0},''); if(c) c(); return; } c(); });
 function fitTop(){ document.documentElement.style.setProperty('--toph',$('top').offsetHeight+'px'); }
@@ -216,43 +215,42 @@ $('askmodal').addEventListener('click',e=>{ if(e.target===$('askmodal')) closeAs
 
 /* ---------- sincronização ---------- */
 let pending=0;
-function setSync(){ const e=$('sync'); if(!navigator.onLine){ e.dataset.s='off'; $('syncT').textContent='Sem internet · as marcações sobem quando voltar'; } else if(pending>0){ e.dataset.s='busy'; $('syncT').textContent='Enviando…'; } else { e.dataset.s='ok'; $('syncT').textContent='Sincronizado'+(DOC&&DOC.cong?' · '+DOC.cong:''); } }
+function setSync(){ const e=$('sync'); if(!navigator.onLine){ e.dataset.s='off'; $('syncT').textContent='Sem internet · as marcações sobem quando voltar'; } else if(pending>0){ e.dataset.s='busy'; $('syncT').textContent='Enviando…'; } else { e.dataset.s='ok'; $('syncT').textContent='Sincronizado'; } }
 function track(p){ pending++; setSync(); const done=()=>{ pending=Math.max(0,pending-1); setSync(); }; p.then(done,done); return p; }
 addEventListener('online',setSync); addEventListener('offline',setSync);
 
-/* ---------- entrada: código do dirigente ---------- */
-let CFG=null; try{ CFG=JSON.parse(localStorage.getItem('dir_cfg')||'null'); }catch(e){}
-let DOC=null, RET={}, unsubs=[], GEO=null, RUAS=null;
-function explainErr(e){ const code=(e&&e.code)||'', msg=(e&&e.message)||''; if(msg==='sem-padrao') return 'A congregação ainda não foi registrada pelo app principal.'; if(msg==='codigo') return 'Código não encontrado. Confira os 6 números com o administrador.'; if(msg==='inativo') return 'Este código foi desativado pelo administrador.'; if(/admin-restricted|operation-not-allowed/.test(code)) return 'O login anônimo está desativado no Firebase.'; if(/permission|unauth/.test(code)) return 'O servidor recusou a leitura (regras do Firestore).'; return (navigator.onLine?'Não foi possível conectar. Tente de novo.':'Sem internet. Na primeira vez é preciso conexão.')+(code?` (${code})`:''); }
-async function connect(code){ $('gateMsg').textContent='Verificando…';
-  try{ if(!auth.currentUser) await auth.signInAnonymously(); const p=await dbFS.collection('config').doc('padrao').get(); if(!p.exists) throw new Error('sem-padrao'); const cong=p.data().cong; const d=await dbFS.collection('congregacoes').doc(cong).collection('dirigentes').doc(code).get(); if(!d.exists) throw new Error('codigo'); if(d.data().ativo===false) throw new Error('inativo'); CFG={cong,code,nome:d.data().nome||''}; localStorage.setItem('dir_cfg',JSON.stringify(CFG)); start(); }
-  catch(e){ $('gateMsg').textContent=explainErr(e); } }
-$('codeGo').addEventListener('click',()=>{ const c=$('codeIn').value.replace(/\D/g,''); if(c.length!==6){ $('gateMsg').textContent='O código tem 6 números.'; return; } connect(c); });
-$('codeIn').addEventListener('keydown',e=>{ if(e.key==='Enter') $('codeGo').click(); });
-$('btnOut').addEventListener('click',async()=>{ if(await ask('Sair deste aparelho? Para voltar, será preciso o código de novo.',[['Sair','danger'],['Cancelar','']])!==0) return; localStorage.removeItem('dir_cfg'); location.reload(); });
-auth.onAuthStateChanged(u=>{ if(!u){ auth.signInAnonymously().catch(e=>{ if(!CFG) $('gateMsg').textContent=explainErr(e); }); return; } if(CFG) start(); });
-
-/* ---------- dados ---------- */
-let started=false;
+/* ---------- territórios recebidos por link (?t=token) ---------- */
+let TOKS=[]; try{ TOKS=JSON.parse(localStorage.getItem('dir_toks')||'[]'); if(!Array.isArray(TOKS)) TOKS=[]; }catch(e){ TOKS=[]; }
+let NEWTOK=LINK_TOK;
+if(NEWTOK&&!TOKS.includes(NEWTOK)){ TOKS.push(NEWTOK); try{ localStorage.setItem('dir_toks',JSON.stringify(TOKS)); }catch(e){} }
+let CONG=null, DOCS={}, RET={}, unsubs=[], GEO=null, RUAS=null, started=false;
+function explainErr(e){ const code=(e&&e.code)||'', msg=(e&&e.message)||''; if(msg==='sem-padrao') return 'A congregação ainda não foi registrada pelo app principal.'; if(/admin-restricted|operation-not-allowed/.test(code)) return 'O login anônimo está desativado no Firebase.'; if(/permission|unauth/.test(code)) return 'O servidor recusou a leitura (publique as regras do Firestore).'; return (navigator.onLine?'Não foi possível conectar. Tente de novo.':'Sem internet. Na primeira vez é preciso conexão.')+(code?` (${code})`:''); }
+async function connect(){ $('gateMsg').textContent='Conectando…'; $('gateRetry').classList.add('hide');
+  try{ if(!auth.currentUser) await auth.signInAnonymously(); let cong=null; try{ cong=localStorage.getItem('dir_cong'); }catch(e){} if(!cong){ const p=await dbFS.collection('config').doc('padrao').get(); if(!p.exists) throw new Error('sem-padrao'); cong=p.data().cong; try{ localStorage.setItem('dir_cong',cong); }catch(e){} } CONG=cong; start(); }
+  catch(e){ $('gate').classList.remove('hide'); $('gateMsg').textContent=explainErr(e); $('gateRetry').classList.remove('hide'); } }
+$('gateRetry').addEventListener('click',connect);
+auth.onAuthStateChanged(u=>{ if(!u){ auth.signInAnonymously().catch(e=>{ $('gate').classList.remove('hide'); $('gateMsg').textContent=explainErr(e); $('gateRetry').classList.remove('hide'); }); return; } if(!started) connect(); });
 async function loadStatic(){ if(GEO) return; const [g,r]=await Promise.all([fetch('mapa-geo.json').then(x=>x.json()).catch(()=>null),fetch('mapa-ruas.json').then(x=>x.json()).catch(()=>null)]); GEO=g; RUAS=r&&r.l||[]; }
-function start(){ if(!CFG||started) return; started=true; $('gate').classList.add('hide'); $('hName').textContent=CFG.nome||'Dirigente';
-  const cref=dbFS.collection('congregacoes').doc(CFG.cong);
-  unsubs.push(cref.collection('dirigentes').doc(CFG.code).onSnapshot(s=>{ if(!s.exists){ DOC=null; renderList(); $('gateMsg').textContent='Este código foi removido pelo administrador.'; $('gate').classList.remove('hide'); localStorage.removeItem('dir_cfg'); return; } DOC=s.data(); if(DOC.ativo===false){ $('gateMsg').textContent='Este código foi desativado.'; $('gate').classList.remove('hide'); return; } $('hName').textContent=DOC.nome||CFG.nome; $('hCong').textContent=DOC.cong||'Dirigente de campo'; setSync(); render(); },()=>setSync()));
-  unsubs.push(cref.collection('retornos').where('code','==',CFG.code).onSnapshot(s=>{ RET={}; s.forEach(d=>{ const r=d.data(); RET[String(+r.k)]=r; }); render(); },()=>{}));
-  loadStatic().then(()=>{ render(); if(DEEP){ const k=DEEP; DEEP=null; if(DOC&&DOC.terrs&&DOC.terrs[k]) openTerr(k); } });
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-  show('scHome'); renderList(); }
-function retRef(k){ return dbFS.collection('congregacoes').doc(CFG.cong).collection('retornos').doc(`${CFG.code}_${k}`); }
-function terrs(){ return DOC&&DOC.terrs?Object.keys(DOC.terrs).sort((a,b)=>+a-+b):[]; }
-function pendOf(k){ const t=DOC.terrs[k]; const r=RET[k]; if(r&&Array.isArray(r.pend)&&(r.ts||0)>(t.ts||0)) return r.pend.slice(); return (t.pend||[]).slice(); }
-function doneOf(k){ const r=RET[k]; return r&&r.done&&(r.ts||0)>(DOC.terrs[k].ts||0)?r.done:''; }
-function render(){ if(scr==='scHome') renderList(); else if(scr==='scTerr'){ if(DOC&&DOC.terrs&&DOC.terrs[curK]) renderTerr(); else { toast('Este território não está mais designado a você'); navBack(); } } }
-function renderList(){ const ks=terrs(); $('tlist').innerHTML=ks.length?ks.map(k=>{ const t=DOC.terrs[k]; const p=pendOf(k),d=doneOf(k); return `<button class="trow" data-k="${k}" data-done="${d?1:0}"><span class="num">${pad2(k)}</span><span class="bd"><b>${esc(t.name||'Território '+pad2(k))}</b><small>${esc(t.area||'')}${t.start?' · desde '+br(t.start):''}${d?' · concluído em '+br(d):''}</small></span><span class="r">${p.length?`<b>${p.length}</b>pend.`:'<b>✓</b>sem pend.'}</span></button>`; }).join(''):`<div class="empty">${DOC?'Nenhum território designado a você no momento.':'Carregando…'}</div>`; $('tlist').querySelectorAll('.trow').forEach(b=>b.addEventListener('click',()=>openTerr(b.dataset.k))); }
+function cref(){ return dbFS.collection('congregacoes').doc(CONG); }
+function subscribe(){ unsubs.forEach(u=>u()); unsubs=[]; TOKS.forEach(tok=>{ unsubs.push(cref().collection('designados').doc(tok).onSnapshot(sn=>{ if(sn.exists) DOCS[tok]=Object.assign({tok},sn.data()); else delete DOCS[tok]; setSync(); render(); },()=>setSync())); unsubs.push(cref().collection('retornos').doc(tok).onSnapshot(sn=>{ if(sn.exists) RET[tok]=sn.data(); render(); },()=>{})); }); }
+function start(){ if(!CONG||started) return; started=true; subscribe(); loadStatic().then(()=>{ render(); if(NEWTOK){ const tk=NEWTOK; NEWTOK=null; const w=()=>{ if(DOCS[tk]){ openTerr(tk); return; } setTimeout(w,300); }; w(); } });
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{}); show('scHome'); renderList(); }
+function retRef(tok){ return cref().collection('retornos').doc(tok); }
+function toks(){ return TOKS.filter(t=>DOCS[t]).sort((a,b)=>+DOCS[a].k-+DOCS[b].k); }
+/* quadras que faltam: começa com todas (nada feito ainda); o que o dirigente marca como feito sai da lista */
+function pendOf(tok){ const d=DOCS[tok]; const r=RET[tok]; if(r&&Array.isArray(r.pend)) return r.pend.slice(); if(Array.isArray(d.pend)&&d.pend.length) return d.pend.slice(); const n=quadsOf(tok).length; return Array.from({length:n},(_,i)=>i); }
+function doneOf(tok){ const d=DOCS[tok]; if(d.end) return d.end; const r=RET[tok]; return r&&r.done&&(r.ts||0)>(d.ts||0)?r.done:''; }
+function nQuads(tok){ return quadsOf(tok).length; }
+function render(){ if(scr==='scHome') renderList(); else if(scr==='scTerr'){ if(DOCS[curK]) renderTerr(); else { toast('Este território não está mais com você'); navBack(); } } }
+function renderList(){ const ts=toks(); $('gate').classList.toggle('hide',ts.length>0||!started); if(DOCS&&Object.keys(DOCS).length&&$('hCong')){ const any=DOCS[ts[0]]; if(any&&any.cong) $('hCong').textContent=any.cong; }
+  $('tlist').innerHTML=ts.length?ts.map(tok=>{ const d=DOCS[tok]; const n=nQuads(tok), p=pendOf(tok).length, dn=doneOf(tok); const feitas=Math.max(0,n-p); return `<button class="trow" data-tok="${tok}" data-done="${dn?1:0}"><span class="num">${pad2(d.k)}</span><span class="bd"><b>${esc(d.name||'Território '+pad2(d.k))}</b><small>${esc(d.area||'')}${d.resp?' · '+esc(d.resp):''}${d.start?' · desde '+br(d.start):''}${dn?' · concluído em '+br(dn):''}</small></span><span class="r">${n?`<b>${feitas}/${n}</b>feitas`:'<b>—</b>'}</span></button>`; }).join(''):'';
+  $('tlist').querySelectorAll('.trow').forEach(b=>b.addEventListener('click',()=>openTerr(b.dataset.tok))); }
+$('btnForget').addEventListener('click',async()=>{ const old=TOKS.filter(t=>!DOCS[t]||doneOf(t)); if(!old.length){ toast('Nenhum território concluído para limpar'); return; } if(await ask(`Tirar da lista ${old.length} território${old.length>1?'s':''} concluído${old.length>1?'s':''}?`,[['Sim','primary'],['Cancelar','']])!==0) return; TOKS=TOKS.filter(t=>!old.includes(t)); try{ localStorage.setItem('dir_toks',JSON.stringify(TOKS)); }catch(e){} old.forEach(t=>{ delete DOCS[t]; delete RET[t]; }); subscribe(); renderList(); });
 
 /* ---------- mapa do território ---------- */
 const P=pts=>'M'+pts.map(p=>p[0]+' '+p[1]).join('L')+'Z'; const Pm=parts=>parts.map(P).join('');
 function qCentroid(parts){ let x=0,y=0,n=0; parts.forEach(pl=>pl.forEach(p=>{x+=p[0];y+=p[1];n++})); return [x/n,y/n]; }
-function quadsOf(k){ const t=DOC.terrs[k]; if(t.q){ try{ const q=JSON.parse(t.q); if(Array.isArray(q)) return q; }catch(e){} } return GEO&&GEO.t[k]?GEO.t[k].q.map(poly=>[poly]):[]; }
+function quadsOf(tok){ const d=DOCS[tok]; if(!d) return []; if(d.q){ try{ const q=JSON.parse(d.q); if(Array.isArray(q)) return q; }catch(e){} } return GEO&&GEO.t[d.k]?GEO.t[d.k].q.map(poly=>[poly]):[]; }
 let VB={x:0,y:0,w:100,h:100}, FIT=null, LIM=null;
 function setVB(){ $('map').setAttribute('viewBox',`${VB.x} ${VB.y} ${VB.w} ${VB.h}`); }
 function fitTerr(k){ const b=GEO.t[k].bb; const pad=60; const x0=b[0][0]-pad,y0=b[0][1]-pad,x1=b[1][0]+pad,y1=b[1][1]+pad; const box=$('mapbox').getBoundingClientRect(); const ar=box.width/box.height; let w=x1-x0,h=y1-y0; if(w/h<ar) w=h*ar; else h=w/ar; VB={x:(x0+x1)/2-w/2,y:(y0+y1)/2-h/2,w,h}; FIT={...VB}; LIM={x0:x0-w*.6,y0:y0-h*.6,x1:x1+w*.6,y1:y1+h*.6}; setVB(); }
@@ -263,21 +261,22 @@ $('zOut').addEventListener('click',()=>{ const b=$('mapbox').getBoundingClientRe
 $('zFit').addEventListener('click',()=>{ if(FIT){ VB={...FIT}; setVB(); } });
 const ptrs=new Map(); let pinch=null, moved=false, dragStart=null;
 const mb=$('mapbox');
-mb.addEventListener('pointerdown',e=>{ mb.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); moved=false; if(ptrs.size===1) dragStart={x:e.clientX,y:e.clientY,vb:{...VB}}; if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y),vb:{...VB},mx:(a.x+b.x)/2,my:(a.y+b.y)/2}; } });
+let downQ=null;
+mb.addEventListener('pointerdown',e=>{ mb.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); moved=false; downQ=e.target&&e.target.closest?e.target.closest('.q'):null; if(ptrs.size===1) dragStart={x:e.clientX,y:e.clientY,vb:{...VB}}; if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y),vb:{...VB},mx:(a.x+b.x)/2,my:(a.y+b.y)/2}; } });
 mb.addEventListener('pointermove',e=>{ if(!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); const box=mb.getBoundingClientRect(); if(ptrs.size===2&&pinch){ const [a,b]=[...ptrs.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y); const f=d/pinch.d; const mx=(a.x+b.x)/2,my=(a.y+b.y)/2; const px=pinch.vb.x+(pinch.mx-box.left)/box.width*pinch.vb.w, py=pinch.vb.y+(pinch.my-box.top)/box.height*pinch.vb.h; VB.w=pinch.vb.w/f; VB.h=pinch.vb.h/f; VB.x=px-(mx-box.left)/box.width*VB.w; VB.y=py-(my-box.top)/box.height*VB.h; clampVB(); setVB(); moved=true; return; } if(ptrs.size===1&&dragStart){ const dx=e.clientX-dragStart.x,dy=e.clientY-dragStart.y; if(Math.hypot(dx,dy)>6) moved=true; VB.x=dragStart.vb.x-dx/box.width*dragStart.vb.w; VB.y=dragStart.vb.y-dy/box.height*dragStart.vb.h; clampVB(); setVB(); } });
-function endPtr(e){ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; if(ptrs.size===0){ if(!moved){ const q=e.target.closest&&e.target.closest('.q'); if(q) toggleQ(+q.dataset.q); } dragStart=null; } else if(ptrs.size===1){ const [p]=[...ptrs.values()]; dragStart={x:p.x,y:p.y,vb:{...VB}}; } }
+function endPtr(e){ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; if(ptrs.size===0){ if(!moved&&downQ) toggleQ(+downQ.dataset.q); downQ=null; dragStart=null; } else if(ptrs.size===1){ const [p]=[...ptrs.values()]; dragStart={x:p.x,y:p.y,vb:{...VB}}; } }
 mb.addEventListener('pointerup',endPtr); mb.addEventListener('pointercancel',endPtr);
 mb.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(e.deltaY<0?1.15:1/1.15,e.clientX,e.clientY); },{passive:false});
-function drawMap(k){ const qs=quadsOf(k); const pend=pendOf(k); $('qs').innerHTML=qs.map((q,i)=>`<path class="q${pend.includes(i)?' pend':''}" data-q="${i}" d="${Pm(q)}"/>`).join(''); $('qn').innerHTML=qs.map((q,i)=>{ const c=qCentroid(q); return `<text class="qn" x="${c[0]}" y="${c[1]}">${i+1}</text>`; }).join('');
+function drawMap(tok){ const k=DOCS[tok].k; const qs=quadsOf(tok); const pend=pendOf(tok); $('qs').innerHTML=qs.map((q,i)=>`<path class="q ${pend.includes(i)?'pend':'done'}" data-q="${i}" d="${Pm(q)}"/>`).join(''); $('qn').innerHTML=qs.map((q,i)=>{ const c=qCentroid(q); return `<text class="qn" x="${c[0]}" y="${c[1]}">${i+1}</text>`; }).join('');
   const b=GEO.t[k].bb; const m=160; $('lbl').innerHTML=(RUAS||[]).filter(l=>l[1]>b[0][0]-m&&l[1]<b[1][0]+m&&l[2]>b[0][1]-m&&l[2]<b[1][1]+m).map(l=>{ const [t,x,y,a,sz,w]=l; const S=sz*1.5; return `<text transform="translate(${x},${y}) rotate(${a})" x="${(w/2).toFixed(1)}" text-anchor="middle" font-size="${S.toFixed(2)}" stroke-width="${(S*.22).toFixed(2)}" textLength="${Math.max(w*1.12,w+6).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(t)}</text>`; }).join(''); }
-function openTerr(k,fromNav){ if(!GEO||!GEO.t[k]){ toast('Mapa deste território não disponível'); return; } curK=k; if(!fromNav) navPush(()=>{ show('scHome'); renderList(); }); show('scTerr'); fitTerr(k); renderTerr(); }
-function renderTerr(){ const k=curK,t=DOC.terrs[k]; $('tTitle').textContent=`${pad2(k)} · ${t.name||'Território '+pad2(k)}`; $('tSub').textContent=`${t.area||''}${t.start?' · desde '+br(t.start):''}`; drawMap(k); const p=pendOf(k),d=doneOf(k); $('pendN').textContent=p.length?`· ${p.length} de ${quadsOf(k).length}`:'· nenhuma'; $('pendList').innerHTML=p.length?p.sort((a,b)=>a-b).map(i=>`<span>Quadra ${i+1}</span>`).join(''):'<small style="color:var(--muted);font-size:12.5px">Toque nas quadras do mapa que ficaram sem fazer.</small>'; $('tInfo').innerHTML=`${t.refs?`<b>Referências:</b> ${esc(t.refs)}<br>`:''}${t.stop?`<b>Onde paramos:</b> ${esc(t.stop)}`:''}`; $('doneBox').classList.toggle('hide',!d); if(d) $('doneBox').textContent=`Você marcou este território como concluído em ${br(d)}. O administrador recebe automaticamente; ele some daqui quando for registrado.`; $('btnDone').classList.toggle('hide',!!d); $('hint').textContent=d?'Território concluído · você ainda pode ajustar as quadras pendentes':'Toque numa quadra para marcar que ela ficou pendente'; $('btnCards').classList.toggle('hide',!DOC.cards); }
+function openTerr(tok,fromNav){ const d=DOCS[tok]; if(!d||!GEO||!GEO.t[d.k]){ toast('Mapa deste território não disponível'); return; } curK=tok; if(!fromNav) navPush(()=>{ show('scHome'); renderList(); }); show('scTerr'); fitTerr(d.k); renderTerr(); }
+function renderTerr(){ const tok=curK,d=DOCS[tok],k=d.k; $('tTitle').textContent=`${pad2(k)} · ${d.name||'Território '+pad2(k)}`; $('tSub').textContent=`${d.area||''}${d.resp?' · '+d.resp:''}${d.start?' · desde '+br(d.start):''}`; drawMap(tok); const n=nQuads(tok),p=pendOf(tok),dn=doneOf(tok); const feitas=[]; for(let i=0;i<n;i++) if(!p.includes(i)) feitas.push(i); $('pendN').textContent=n?`· ${feitas.length} de ${n} feitas`:''; $('pendList').innerHTML=n?(feitas.map(i=>`<span class="ok">Quadra ${i+1} ✓</span>`).join('')+p.sort((a,b)=>a-b).map(i=>`<span>Quadra ${i+1} falta</span>`).join('')):'<small style="color:var(--muted);font-size:12.5px">Este território não tem quadras desenhadas.</small>'; $('tInfo').innerHTML=`${d.refs?`<b>Referências:</b> ${esc(d.refs)}<br>`:''}${d.stop?`<b>Onde paramos:</b> ${esc(d.stop)}`:''}`; $('doneBox').classList.toggle('hide',!dn); if(dn) $('doneBox').textContent=d.end?`Território concluído em ${br(dn)} e registrado pelo administrador.`:`Você marcou este território como concluído em ${br(dn)}. O administrador recebe automaticamente.`; $('btnDone').classList.toggle('hide',!!dn); $('hint').textContent=dn?'Território concluído':'Toque nas quadras que você já fez'; $('btnCards').classList.toggle('hide',!d.cards); }
 let sendT=null;
-function sendRet(k,extra){ const p=pendOf(k); const data=Object.assign({code:CFG.code,k:String(+k),nome:CFG.nome||'',pend:p,ts:Date.now()},extra||{}); RET[k]=Object.assign({},RET[k]||{},data); track(retRef(k).set(data,{merge:true})); }
-function toggleQ(i){ const k=curK; const p=pendOf(k); const j=p.indexOf(i); if(j>=0) p.splice(j,1); else p.push(i); RET[k]=Object.assign({},RET[k]||{},{pend:p,ts:Date.now()}); renderTerr(); clearTimeout(sendT); sendT=setTimeout(()=>sendRet(k),600); toast(j>=0?`Quadra ${i+1} feita`:`Quadra ${i+1} marcada como pendente`); }
-$('btnDone').addEventListener('click',async()=>{ const k=curK,p=pendOf(k); if(await ask(`Marcar o território ${pad2(k)} como concluído hoje (${br(today())})?${p.length?` Ficam registradas ${p.length} quadra${p.length>1?'s':''} pendente${p.length>1?'s':''}.`:''}`,[['Sim, concluído','primary'],['Cancelar','']])!==0) return; clearTimeout(sendT); sendRet(k,{done:today()}); renderTerr(); renderList(); toast('Conclusão enviada ao administrador'); });
-$('btnMaps').addEventListener('click',()=>{ const t=DOC.terrs[curK]; const q=[(t.refs||'').split(',')[0].trim()||t.name||('Território '+pad2(curK)),DOC.city||''].filter(Boolean).join(', '); window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q),'_blank','noopener'); });
-$('btnCards').addEventListener('click',()=>{ if(!DOC.cards) return; const u=DOC.cards; window.open(u+(u.includes('?')?'&':'?')+'t='+(+curK),'_blank','noopener'); });
+function sendRet(tok,extra){ const p=pendOf(tok); const data=Object.assign({tok,k:String(+DOCS[tok].k),pend:p,ts:Date.now()},extra||{}); RET[tok]=Object.assign({},RET[tok]||{},data); track(retRef(tok).set(data,{merge:true})); }
+function toggleQ(i){ const tok=curK; if(doneOf(tok)&&DOCS[tok].end) return; const p=pendOf(tok); const j=p.indexOf(i); if(j>=0) p.splice(j,1); else p.push(i); RET[tok]=Object.assign({},RET[tok]||{},{pend:p,ts:Date.now()}); renderTerr(); clearTimeout(sendT); sendT=setTimeout(()=>sendRet(tok),600); toast(j>=0?`Quadra ${i+1} feita ✓`:`Quadra ${i+1} voltou a faltar`); }
+$('btnDone').addEventListener('click',async()=>{ const tok=curK,k=DOCS[tok].k,p=pendOf(tok); if(await ask(`Marcar o território ${pad2(k)} como concluído hoje (${br(today())})?${p.length?` Ficam registradas ${p.length} quadra${p.length>1?'s':''} que faltaram.`:''}`,[['Sim, concluído','primary'],['Cancelar','']])!==0) return; clearTimeout(sendT); sendRet(tok,{done:today()}); renderTerr(); renderList(); toast('Conclusão enviada ao administrador'); });
+$('btnMaps').addEventListener('click',()=>{ const t=DOCS[curK]; const q=[(t.refs||'').split(',')[0].trim()||t.name||('Território '+pad2(t.k)),t.city||''].filter(Boolean).join(', '); window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q),'_blank','noopener'); });
+$('btnCards').addEventListener('click',()=>{ const d=DOCS[curK]; if(!d.cards) return; const u=d.cards; window.open(u+(u.includes('?')?'&':'?')+'t='+(+d.k),'_blank','noopener'); });
 /* ---------- instalação (PWA) ---------- */
 let instPrompt=null; const wantInst=WANT_INST; const isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent)&&!window.MSStream; const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function instShow(){ const box=$('instbox'); if(!box||standalone) return; let hid=false; try{ hid=localStorage.getItem('inst_hide')==='1'; }catch(e){} if(hid&&!wantInst) return; if(instPrompt){ box.classList.remove('hide'); $('instTxt').textContent='Fica na tela inicial, abre em tela cheia e funciona sem internet.'; $('instBtn').textContent='Instalar o app'; } else if(isIOS){ box.classList.remove('hide'); $('instTxt').textContent='No iPhone: toque em Compartilhar (quadrado com seta) e depois em "Adicionar à Tela de Início".'; $('instBtn').classList.add('hide'); } else if(wantInst){ box.classList.remove('hide'); $('instTxt').textContent='No Chrome: toque nos três pontos (⋮) e em "Instalar aplicativo" ou "Adicionar à tela inicial".'; $('instBtn').classList.add('hide'); } }
@@ -287,7 +286,6 @@ if($('instBtn')) $('instBtn').addEventListener('click',async()=>{ if(!instPrompt
 if($('instX')) $('instX').addEventListener('click',()=>{ $('instbox').classList.add('hide'); try{ localStorage.setItem('inst_hide','1'); }catch(e){} });
 setTimeout(instShow,800);
 setSync();
-if(CFG) start();
 </script>
 </body>
 </html>
