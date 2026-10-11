@@ -42,6 +42,18 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .iconbtn{width:44px;height:44px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;box-shadow:var(--sh);flex:none}
 .iconbtn:active{transform:scale(.94)}
 .iconbtn svg{width:19px;height:19px;stroke:var(--ink);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.sfield{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:0 6px 0 14px;height:46px;box-shadow:var(--sh)}
+.sfield:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.sfield svg{width:19px;height:19px;stroke:var(--acc);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sfield input{flex:1;min-width:0;border:none;background:none;font-size:15px;font-weight:600;padding:0;height:100%}
+.sfield input:focus{outline:none}
+.sfield input::placeholder{color:var(--faint);font-weight:500}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;background:var(--surface2);color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--text);border-color:var(--text);color:var(--bg)}
+.trow[data-s="new"] .num{background:var(--surface2);color:var(--muted);border-color:var(--line)}
+.trow[data-s="done"] .num{background:var(--acc);color:var(--acc-t)}
 .ttl{flex:1;min-width:0}
 .ttl b{display:block;font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
 .ttl small{display:block;font-size:11.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -133,14 +145,14 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
   <div class="gbox">
     <h1>Dirigente</h1>
     <p class="note" style="margin:0 0 10px">Aqui aparecem os territórios que o administrador enviar para você, com o mapa de cada um para marcar as quadras feitas e concluir.</p>
-    <div class="err" id="gateMsg" style="color:var(--muted)">Nenhum território recebido ainda. Abra o link que o administrador mandou pelo WhatsApp: o território entra aqui sozinho.</div>
+    <div class="err" id="gateMsg" style="color:var(--muted)">Conectando à congregação…</div>
     <button class="btn primary hide" id="gateRetry">Tentar de novo</button>
   </div>
 </section>
 <div class="top" id="top">
   <div class="bar" id="barHome">
     <span class="logo">D</span>
-    <div class="ttl"><b id="hName">Dirigente</b><small id="hCong">Territórios recebidos</small></div>
+    <div class="sfield"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="q" type="text" placeholder="Território ou nome" autocomplete="off"></div>
   </div>
   <div class="bar hide" id="barSub">
     <button class="iconbtn" id="btnBack" aria-label="Voltar"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -150,10 +162,10 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
 </div>
 
 <section class="screen" id="scHome"><div class="wrap">
-  <div class="eyebrow">Designados a você</div><h1>Territórios</h1>
+  <div class="eyebrow" id="hCong">Dirigente de campo</div><h1>Territórios</h1><div class="chips" id="hfilter" style="margin:0 0 10px;padding:0"><button class="chip" data-f="all" aria-pressed="true">Todos</button><button class="chip" data-f="wip" aria-pressed="false">Em andamento</button><button class="chip" data-f="new" aria-pressed="false">A iniciar</button><button class="chip" data-f="done" aria-pressed="false">Concluídos</button></div>
   <div class="instbox hide" id="instbox"><button class="x" id="instX" aria-label="Fechar">×</button><b>Instale o app no celular</b><p id="instTxt">Fica na tela inicial, abre em tela cheia e funciona sem internet.</p><button class="btn" id="instBtn">Instalar o app</button></div>
   <div class="tlist" id="tlist"></div>
-  <p class="note">Toque no território para abrir o mapa. Cada link que o administrador enviar acrescenta o território aqui; <button id="btnForget" style="color:var(--acc);font-weight:700">limpar os concluídos</button>.</p>
+  <p class="note">Toque no território para abrir o mapa, informar quem está dirigindo, marcar as quadras feitas e concluir.</p>
 </div></section>
 
 <section class="screen" id="scTerr"><div class="wrap">
@@ -163,6 +175,7 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
     <div class="hint" id="hint">Toque nas quadras que você já fez</div>
   </div>
   <div class="panel"><h3>Quadras <span id="pendN" style="font-weight:600;letter-spacing:0;text-transform:none"></span></h3><div class="pendlist" id="pendList"></div><div class="info" id="tInfo" style="margin-top:8px"></div></div>
+  <div class="panel" id="nomePanel"><h3>Quem está dirigindo</h3><input type="text" id="dirNome" list="nomes" autocomplete="off" autocapitalize="words" placeholder="Nome do dirigente" style="width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r3);padding:12px 12px;font-size:16px;font-weight:700"><datalist id="nomes"></datalist><small id="nomeHint" style="display:block;color:var(--muted);font-size:12px;margin-top:6px">O nome vai para o administrador junto com as quadras.</small></div>
   <div id="doneBox" class="donebox hide"></div>
   <div class="acts" id="tActs">
     <button class="btn primary wide" id="btnDone"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Território concluído</button>
@@ -179,7 +192,7 @@ h1{font-family:var(--hand);font-weight:700;font-size:38px;line-height:1;margin:2
 <script>
 const $=id=>document.getElementById(id);
 const WANT_INST=/[?&]instalar=1/.test(location.search);
-let LINK_TOK=null; try{ const t=new URLSearchParams(location.search).get('t'); if(t&&/^[a-z0-9]{6,24}$/i.test(t)) LINK_TOK=t; }catch(e){}
+let DEEP0=null; try{ const t=new URLSearchParams(location.search).get('t'); if(t&&/^\d+$/.test(t)) DEEP0=String(+t); }catch(e){}
 const pad2=k=>String(k).padStart(2,'0');
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const today=()=>iso(new Date());
@@ -219,38 +232,45 @@ function setSync(){ const e=$('sync'); if(!navigator.onLine){ e.dataset.s='off';
 function track(p){ pending++; setSync(); const done=()=>{ pending=Math.max(0,pending-1); setSync(); }; p.then(done,done); return p; }
 addEventListener('online',setSync); addEventListener('offline',setSync);
 
-/* ---------- territórios recebidos por link (?t=token) ---------- */
-let TOKS=[]; try{ TOKS=JSON.parse(localStorage.getItem('dir_toks')||'[]'); if(!Array.isArray(TOKS)) TOKS=[]; }catch(e){ TOKS=[]; }
-let NEWTOK=LINK_TOK;
-if(NEWTOK&&!TOKS.includes(NEWTOK)){ TOKS.push(NEWTOK); try{ localStorage.setItem('dir_toks',JSON.stringify(TOKS)); }catch(e){} }
-let CONG=null, DOCS={}, RET={}, unsubs=[], GEO=null, RUAS=null, started=false;
+/* ---------- todos os territórios da congregação (publico/dados) + retornos por território ---------- */
+let CONG=null, NOMES={}, ST={}, RET={}, PUB={}, unsubs=[], GEO=null, RUAS=null, started=false, hf='all';
+let DEEP=DEEP0;
 function explainErr(e){ const code=(e&&e.code)||'', msg=(e&&e.message)||''; if(msg==='sem-padrao') return 'A congregação ainda não foi registrada pelo app principal.'; if(/admin-restricted|operation-not-allowed/.test(code)) return 'O login anônimo está desativado no Firebase.'; if(/permission|unauth/.test(code)) return 'O servidor recusou a leitura (publique as regras do Firestore).'; return (navigator.onLine?'Não foi possível conectar. Tente de novo.':'Sem internet. Na primeira vez é preciso conexão.')+(code?` (${code})`:''); }
-async function connect(){ $('gateMsg').textContent='Conectando…'; $('gateRetry').classList.add('hide');
+async function connect(){ $('gateMsg').textContent='Conectando à congregação…'; $('gateRetry').classList.add('hide');
   try{ if(!auth.currentUser) await auth.signInAnonymously(); let cong=null; try{ cong=localStorage.getItem('dir_cong'); }catch(e){} if(!cong){ const p=await dbFS.collection('config').doc('padrao').get(); if(!p.exists) throw new Error('sem-padrao'); cong=p.data().cong; try{ localStorage.setItem('dir_cong',cong); }catch(e){} } CONG=cong; start(); }
   catch(e){ $('gate').classList.remove('hide'); $('gateMsg').textContent=explainErr(e); $('gateRetry').classList.remove('hide'); } }
 $('gateRetry').addEventListener('click',connect);
 auth.onAuthStateChanged(u=>{ if(!u){ auth.signInAnonymously().catch(e=>{ $('gate').classList.remove('hide'); $('gateMsg').textContent=explainErr(e); $('gateRetry').classList.remove('hide'); }); return; } if(!started) connect(); });
+$('gate').classList.remove('hide');
 async function loadStatic(){ if(GEO) return; const [g,r]=await Promise.all([fetch('mapa-geo.json').then(x=>x.json()).catch(()=>null),fetch('mapa-ruas.json').then(x=>x.json()).catch(()=>null)]); GEO=g; RUAS=r&&r.l||[]; }
 function cref(){ return dbFS.collection('congregacoes').doc(CONG); }
-function subscribe(){ unsubs.forEach(u=>u()); unsubs=[]; TOKS.forEach(tok=>{ unsubs.push(cref().collection('designados').doc(tok).onSnapshot(sn=>{ if(sn.exists) DOCS[tok]=Object.assign({tok},sn.data()); else delete DOCS[tok]; setSync(); render(); },()=>setSync())); unsubs.push(cref().collection('retornos').doc(tok).onSnapshot(sn=>{ if(sn.exists) RET[tok]=sn.data(); render(); },()=>{})); }); }
-function start(){ if(!CONG||started) return; started=true; subscribe(); loadStatic().then(()=>{ render(); if(NEWTOK){ const tk=NEWTOK; NEWTOK=null; const w=()=>{ if(DOCS[tk]){ openTerr(tk); return; } setTimeout(w,300); }; w(); } });
+function start(){ if(!CONG||started) return; started=true; $('gate').classList.add('hide');
+  unsubs.push(cref().collection('publico').doc('dados').onSnapshot(sn=>{ if(!sn.exists) return; PUB=sn.data(); NOMES=PUB.nomes||{}; ST=PUB.st||{}; $('hCong').textContent=PUB.cong||'Dirigente de campo'; setSync(); render(); },()=>setSync()));
+  unsubs.push(cref().collection('retornos').onSnapshot(sn=>{ RET={}; sn.forEach(d=>{ const r=d.data(); if(r&&r.k) RET[String(+r.k)]=r; }); render(); },()=>{}));
+  loadStatic().then(()=>{ render(); if(DEEP){ const k=DEEP; DEEP=null; const w=(n)=>{ if(NOMES[k]||n>20){ if(GEO&&GEO.t[k]) openTerr(k); return; } setTimeout(()=>w(n+1),300); }; w(0); } });
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{}); show('scHome'); renderList(); }
-function retRef(tok){ return cref().collection('retornos').doc(tok); }
-function toks(){ return TOKS.filter(t=>DOCS[t]).sort((a,b)=>+DOCS[a].k-+DOCS[b].k); }
-/* quadras que faltam: começa com todas (nada feito ainda); o que o dirigente marca como feito sai da lista */
-function pendOf(tok){ const d=DOCS[tok]; const r=RET[tok]; if(r&&Array.isArray(r.pend)) return r.pend.slice(); if(Array.isArray(d.pend)&&d.pend.length) return d.pend.slice(); const n=quadsOf(tok).length; return Array.from({length:n},(_,i)=>i); }
-function doneOf(tok){ const d=DOCS[tok]; if(d.end) return d.end; const r=RET[tok]; return r&&r.done&&(r.ts||0)>(d.ts||0)?r.done:''; }
-function nQuads(tok){ return quadsOf(tok).length; }
-function render(){ if(scr==='scHome') renderList(); else if(scr==='scTerr'){ if(DOCS[curK]) renderTerr(); else { toast('Este território não está mais com você'); navBack(); } } }
-function renderList(){ const ts=toks(); $('gate').classList.toggle('hide',ts.length>0||!started); if(DOCS&&Object.keys(DOCS).length&&$('hCong')){ const any=DOCS[ts[0]]; if(any&&any.cong) $('hCong').textContent=any.cong; }
-  $('tlist').innerHTML=ts.length?ts.map(tok=>{ const d=DOCS[tok]; const n=nQuads(tok), p=pendOf(tok).length, dn=doneOf(tok); const feitas=Math.max(0,n-p); return `<button class="trow" data-tok="${tok}" data-done="${dn?1:0}"><span class="num">${pad2(d.k)}</span><span class="bd"><b>${esc(d.name||'Território '+pad2(d.k))}</b><small>${esc(d.area||'')}${d.resp?' · '+esc(d.resp):''}${d.start?' · desde '+br(d.start):''}${dn?' · concluído em '+br(dn):''}</small></span><span class="r">${n?`<b>${feitas}/${n}</b>feitas`:'<b>—</b>'}</span></button>`; }).join(''):'';
-  $('tlist').querySelectorAll('.trow').forEach(b=>b.addEventListener('click',()=>openTerr(b.dataset.tok))); }
-$('btnForget').addEventListener('click',async()=>{ const old=TOKS.filter(t=>!DOCS[t]||doneOf(t)); if(!old.length){ toast('Nenhum território concluído para limpar'); return; } if(await ask(`Tirar da lista ${old.length} território${old.length>1?'s':''} concluído${old.length>1?'s':''}?`,[['Sim','primary'],['Cancelar','']])!==0) return; TOKS=TOKS.filter(t=>!old.includes(t)); try{ localStorage.setItem('dir_toks',JSON.stringify(TOKS)); }catch(e){} old.forEach(t=>{ delete DOCS[t]; delete RET[t]; }); subscribe(); renderList(); });
+function retRef(k){ return cref().collection('retornos').doc(String(+k)); }
+const KEYS=()=>Object.keys(NOMES).sort((a,b)=>+a-+b);
+function nome(k){ return (NOMES[k]&&NOMES[k].n)||('Território '+pad2(k)); }
+function areaOf(k){ return (NOMES[k]&&NOMES[k].a)||'Urbano'; }
+function stOf(k){ return ST[k]||{s:'new',r:'',st:'',en:'',p:[],c:''}; }
+function retOf(k){ const r=RET[k],t=stOf(k); if(!r) return null; if(t.s==='done') return null; if(t.c&&r.c&&r.c!==t.c) return null; return r; }
+function pendOf(k){ const t=stOf(k),r=retOf(k); if(r&&Array.isArray(r.pend)) return r.pend.slice(); if(t.s==='done') return (t.p||[]).slice(); const n=quadsOf(k).length; return Array.from({length:n},(_,i)=>i); }
+function doneOf(k){ const t=stOf(k); if(t.s==='done') return t.en||'sim'; const r=retOf(k); return r&&r.done?r.done:''; }
+function respOf(k){ const r=retOf(k); return (r&&r.nome)||stOf(k).r||''; }
+function statusOf(k){ const t=stOf(k); if(doneOf(k)) return 'done'; if(t.s==='wip'||retOf(k)) return 'wip'; return 'new'; }
+function nQuads(k){ return quadsOf(k).length; }
+function render(){ if(scr==='scHome') renderList(); else if(scr==='scTerr'&&curK) renderTerr(); }
+function renderList(){ const term=($('q').value||'').trim().toLowerCase(); const ks=KEYS().filter(k=>{ const st=statusOf(k); if(hf!=='all'&&st!==hf) return false; if(!term) return true; return k===String(+term)||pad2(k).includes(term)||nome(k).toLowerCase().includes(term)||respOf(k).toLowerCase().includes(term); });
+  $('tlist').innerHTML=ks.length?ks.map(k=>{ const st=statusOf(k),t=stOf(k); const n=nQuads(k),p=pendOf(k).length,dn=doneOf(k); const feitas=Math.max(0,n-p); const sub=st==='done'?`concluído${t.en?' em '+br(t.en):''}${t.r?' · '+esc(t.r):''}`:st==='wip'?`${respOf(k)?esc(respOf(k))+' · ':''}desde ${br(t.st||(retOf(k)&&retOf(k).ts?iso(new Date(retOf(k).ts)):''))}`:'a iniciar'; return `<button class="trow" data-k="${k}" data-s="${st}"><span class="num">${pad2(k)}</span><span class="bd"><b>${esc(nome(k))}</b><small>${esc(areaOf(k))} · ${sub}</small></span><span class="r">${st==='wip'&&n?`<b>${feitas}/${n}</b>feitas`:st==='done'?'<b>✓</b>':''}</span></button>`; }).join(''):'<div class="empty">Nenhum território com esse filtro.</div>';
+  $('tlist').querySelectorAll('.trow').forEach(b=>b.addEventListener('click',()=>openTerr(b.dataset.k))); }
+$('q').addEventListener('input',renderList);
+$('hfilter').addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b) return; hf=b.dataset.f; $('hfilter').querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); renderList(); });
 
 /* ---------- mapa do território ---------- */
 const P=pts=>'M'+pts.map(p=>p[0]+' '+p[1]).join('L')+'Z'; const Pm=parts=>parts.map(P).join('');
 function qCentroid(parts){ let x=0,y=0,n=0; parts.forEach(pl=>pl.forEach(p=>{x+=p[0];y+=p[1];n++})); return [x/n,y/n]; }
-function quadsOf(tok){ const d=DOCS[tok]; if(!d) return []; if(d.q){ try{ const q=JSON.parse(d.q); if(Array.isArray(q)) return q; }catch(e){} } return GEO&&GEO.t[d.k]?GEO.t[d.k].q.map(poly=>[poly]):[]; }
+function quadsOf(k){ const t=stOf(k); if(t.q){ try{ const q=JSON.parse(t.q); if(Array.isArray(q)) return q; }catch(e){} } return GEO&&GEO.t[k]?GEO.t[k].q.map(poly=>[poly]):[]; }
 let VB={x:0,y:0,w:100,h:100}, FIT=null, LIM=null;
 function setVB(){ $('map').setAttribute('viewBox',`${VB.x} ${VB.y} ${VB.w} ${VB.h}`); }
 function fitTerr(k){ const b=GEO.t[k].bb; const pad=60; const x0=b[0][0]-pad,y0=b[0][1]-pad,x1=b[1][0]+pad,y1=b[1][1]+pad; const box=$('mapbox').getBoundingClientRect(); const ar=box.width/box.height; let w=x1-x0,h=y1-y0; if(w/h<ar) w=h*ar; else h=w/ar; VB={x:(x0+x1)/2-w/2,y:(y0+y1)/2-h/2,w,h}; FIT={...VB}; LIM={x0:x0-w*.6,y0:y0-h*.6,x1:x1+w*.6,y1:y1+h*.6}; setVB(); }
@@ -267,16 +287,17 @@ mb.addEventListener('pointermove',e=>{ if(!ptrs.has(e.pointerId)) return; ptrs.s
 function endPtr(e){ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; if(ptrs.size===0){ if(!moved&&downQ) toggleQ(+downQ.dataset.q); downQ=null; dragStart=null; } else if(ptrs.size===1){ const [p]=[...ptrs.values()]; dragStart={x:p.x,y:p.y,vb:{...VB}}; } }
 mb.addEventListener('pointerup',endPtr); mb.addEventListener('pointercancel',endPtr);
 mb.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(e.deltaY<0?1.15:1/1.15,e.clientX,e.clientY); },{passive:false});
-function drawMap(tok){ const k=DOCS[tok].k; const qs=quadsOf(tok); const pend=pendOf(tok); $('qs').innerHTML=qs.map((q,i)=>`<path class="q ${pend.includes(i)?'pend':'done'}" data-q="${i}" d="${Pm(q)}"/>`).join(''); $('qn').innerHTML=qs.map((q,i)=>{ const c=qCentroid(q); return `<text class="qn" x="${c[0]}" y="${c[1]}">${i+1}</text>`; }).join('');
+function drawMap(k){ const qs=quadsOf(k); const pend=pendOf(k); $('qs').innerHTML=qs.map((q,i)=>`<path class="q ${pend.includes(i)?'pend':'done'}" data-q="${i}" d="${Pm(q)}"/>`).join(''); $('qn').innerHTML=qs.map((q,i)=>{ const c=qCentroid(q); return `<text class="qn" x="${c[0]}" y="${c[1]}">${i+1}</text>`; }).join('');
   const b=GEO.t[k].bb; const m=160; $('lbl').innerHTML=(RUAS||[]).filter(l=>l[1]>b[0][0]-m&&l[1]<b[1][0]+m&&l[2]>b[0][1]-m&&l[2]<b[1][1]+m).map(l=>{ const [t,x,y,a,sz,w]=l; const S=sz*1.5; return `<text transform="translate(${x},${y}) rotate(${a})" x="${(w/2).toFixed(1)}" text-anchor="middle" font-size="${S.toFixed(2)}" stroke-width="${(S*.22).toFixed(2)}" textLength="${Math.max(w*1.12,w+6).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(t)}</text>`; }).join(''); }
-function openTerr(tok,fromNav){ const d=DOCS[tok]; if(!d||!GEO||!GEO.t[d.k]){ toast('Mapa deste território não disponível'); return; } curK=tok; if(!fromNav) navPush(()=>{ show('scHome'); renderList(); }); show('scTerr'); fitTerr(d.k); renderTerr(); }
-function renderTerr(){ const tok=curK,d=DOCS[tok],k=d.k; $('tTitle').textContent=`${pad2(k)} · ${d.name||'Território '+pad2(k)}`; $('tSub').textContent=`${d.area||''}${d.resp?' · '+d.resp:''}${d.start?' · desde '+br(d.start):''}`; drawMap(tok); const n=nQuads(tok),p=pendOf(tok),dn=doneOf(tok); const feitas=[]; for(let i=0;i<n;i++) if(!p.includes(i)) feitas.push(i); $('pendN').textContent=n?`· ${feitas.length} de ${n} feitas`:''; $('pendList').innerHTML=n?(feitas.map(i=>`<span class="ok">Quadra ${i+1} ✓</span>`).join('')+p.sort((a,b)=>a-b).map(i=>`<span>Quadra ${i+1} falta</span>`).join('')):'<small style="color:var(--muted);font-size:12.5px">Este território não tem quadras desenhadas.</small>'; $('tInfo').innerHTML=`${d.refs?`<b>Referências:</b> ${esc(d.refs)}<br>`:''}${d.stop?`<b>Onde paramos:</b> ${esc(d.stop)}`:''}`; $('doneBox').classList.toggle('hide',!dn); if(dn) $('doneBox').textContent=d.end?`Território concluído em ${br(dn)} e registrado pelo administrador.`:`Você marcou este território como concluído em ${br(dn)}. O administrador recebe automaticamente.`; $('btnDone').classList.toggle('hide',!!dn); $('hint').textContent=dn?'Território concluído':'Toque nas quadras que você já fez'; $('btnCards').classList.toggle('hide',!d.cards); }
+function openTerr(k,fromNav){ if(!GEO||!GEO.t[k]){ toast('Este território não está desenhado no mapa'); return; } curK=k; if(!fromNav) navPush(()=>{ show('scHome'); renderList(); }); show('scTerr'); fitTerr(k); let nm=respOf(k); if(!nm){ try{ nm=localStorage.getItem('dir_nome')||''; }catch(e){} } $('dirNome').value=nm; renderTerr(); }
+function renderTerr(){ const k=curK,t=stOf(k),st=statusOf(k); $('tTitle').textContent=`${pad2(k)} · ${nome(k)}`; $('tSub').textContent=`${areaOf(k)}${st==='wip'&&t.st?' · desde '+br(t.st):st==='new'?' · a iniciar':''}`; drawMap(k); const n=nQuads(k),p=pendOf(k),dn=doneOf(k); const feitas=[]; for(let i=0;i<n;i++) if(!p.includes(i)) feitas.push(i); $('pendN').textContent=n?`· ${feitas.length} de ${n} feitas`:''; $('pendList').innerHTML=n?(feitas.map(i=>`<span class="ok">Quadra ${i+1} ✓</span>`).join('')+p.sort((a,b)=>a-b).map(i=>`<span>Quadra ${i+1} falta</span>`).join('')):'<small style="color:var(--muted);font-size:12.5px">Este território não tem quadras desenhadas.</small>'; $('tInfo').innerHTML=`${t.refs?`<b>Referências:</b> ${esc(t.refs)}<br>`:''}${t.stop?`<b>Onde paramos:</b> ${esc(t.stop)}`:''}`; $('doneBox').classList.toggle('hide',!dn); if(dn) $('doneBox').textContent=t.s==='done'?`Território concluído${t.en?' em '+br(t.en):''}${t.r?' por '+t.r:''} e registrado pelo administrador. Ele será reaberto quando for designado de novo.`:`Você marcou este território como concluído em ${br(dn)}. O administrador recebe automaticamente.`; $('btnDone').classList.toggle('hide',!!dn); $('nomePanel').classList.toggle('hide',t.s==='done'); $('hint').textContent=dn?'Território concluído':'Toque nas quadras que você já fez'; $('nomes').innerHTML=[...new Set(Object.keys(ST).map(x=>ST[x].r).concat(Object.values(RET).map(r=>r.nome)).filter(Boolean))].sort().map(x=>`<option value="${esc(x)}">`).join(''); $('btnCards').classList.toggle('hide',!PUB.cards); }
 let sendT=null;
-function sendRet(tok,extra){ const p=pendOf(tok); const data=Object.assign({tok,k:String(+DOCS[tok].k),pend:p,ts:Date.now()},extra||{}); RET[tok]=Object.assign({},RET[tok]||{},data); track(retRef(tok).set(data,{merge:true})); }
-function toggleQ(i){ const tok=curK; if(doneOf(tok)&&DOCS[tok].end) return; const p=pendOf(tok); const j=p.indexOf(i); if(j>=0) p.splice(j,1); else p.push(i); RET[tok]=Object.assign({},RET[tok]||{},{pend:p,ts:Date.now()}); renderTerr(); clearTimeout(sendT); sendT=setTimeout(()=>sendRet(tok),600); toast(j>=0?`Quadra ${i+1} feita ✓`:`Quadra ${i+1} voltou a faltar`); }
-$('btnDone').addEventListener('click',async()=>{ const tok=curK,k=DOCS[tok].k,p=pendOf(tok); if(await ask(`Marcar o território ${pad2(k)} como concluído hoje (${br(today())})?${p.length?` Ficam registradas ${p.length} quadra${p.length>1?'s':''} que faltaram.`:''}`,[['Sim, concluído','primary'],['Cancelar','']])!==0) return; clearTimeout(sendT); sendRet(tok,{done:today()}); renderTerr(); renderList(); toast('Conclusão enviada ao administrador'); });
-$('btnMaps').addEventListener('click',()=>{ const t=DOCS[curK]; const q=[(t.refs||'').split(',')[0].trim()||t.name||('Território '+pad2(t.k)),t.city||''].filter(Boolean).join(', '); window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q),'_blank','noopener'); });
-$('btnCards').addEventListener('click',()=>{ const d=DOCS[curK]; if(!d.cards) return; const u=d.cards; window.open(u+(u.includes('?')?'&':'?')+'t='+(+d.k),'_blank','noopener'); });
+function sendRet(k,extra){ const p=pendOf(k); const nm=$('dirNome').value.trim(); if(nm){ try{ localStorage.setItem('dir_nome',nm); }catch(e){} } const data=Object.assign({k:String(+k),c:stOf(k).c||'',nome:nm,pend:p,ts:Date.now()},extra||{}); RET[k]=Object.assign({},RET[k]||{},data); track(retRef(k).set(data,{merge:true})); }
+function toggleQ(i){ const k=curK; if(stOf(k).s==='done'){ toast('Território já concluído e registrado'); return; } const p=pendOf(k); const j=p.indexOf(i); if(j>=0) p.splice(j,1); else p.push(i); RET[k]=Object.assign({},RET[k]||{},{k:String(+k),c:stOf(k).c||'',pend:p,ts:Date.now()}); renderTerr(); clearTimeout(sendT); sendT=setTimeout(()=>sendRet(k),600); toast(j>=0?`Quadra ${i+1} feita ✓`:`Quadra ${i+1} voltou a faltar`); }
+let nomeT=null; $('dirNome').addEventListener('input',()=>{ clearTimeout(nomeT); nomeT=setTimeout(()=>{ if(curK&&stOf(curK).s!=='done'&&$('dirNome').value.trim()) sendRet(curK); },900); });
+$('btnDone').addEventListener('click',async()=>{ const k=curK,p=pendOf(k); if(!$('dirNome').value.trim()){ toast('Informe quem está dirigindo'); $('dirNome').focus(); return; } if(await ask(`Marcar o território ${pad2(k)} como concluído hoje (${br(today())}) por ${$('dirNome').value.trim()}?${p.length?` Ficam registradas ${p.length} quadra${p.length>1?'s':''} que faltaram.`:''}`,[['Sim, concluído','primary'],['Cancelar','']])!==0) return; clearTimeout(sendT); sendRet(k,{done:today()}); renderTerr(); renderList(); toast('Conclusão enviada ao administrador'); });
+$('btnMaps').addEventListener('click',()=>{ const t=stOf(curK); const q=[(t.refs||'').split(',')[0].trim()||nome(curK),PUB.city||''].filter(Boolean).join(', '); window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q),'_blank','noopener'); });
+$('btnCards').addEventListener('click',()=>{ if(!PUB.cards) return; const u=PUB.cards; window.open(u+(u.includes('?')?'&':'?')+'t='+(+curK),'_blank','noopener'); });
 /* ---------- instalação (PWA) ---------- */
 let instPrompt=null; const wantInst=WANT_INST; const isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent)&&!window.MSStream; const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function instShow(){ const box=$('instbox'); if(!box||standalone) return; let hid=false; try{ hid=localStorage.getItem('inst_hide')==='1'; }catch(e){} if(hid&&!wantInst) return; if(instPrompt){ box.classList.remove('hide'); $('instTxt').textContent='Fica na tela inicial, abre em tela cheia e funciona sem internet.'; $('instBtn').textContent='Instalar o app'; } else if(isIOS){ box.classList.remove('hide'); $('instTxt').textContent='No iPhone: toque em Compartilhar (quadrado com seta) e depois em "Adicionar à Tela de Início".'; $('instBtn').classList.add('hide'); } else if(wantInst){ box.classList.remove('hide'); $('instTxt').textContent='No Chrome: toque nos três pontos (⋮) e em "Instalar aplicativo" ou "Adicionar à tela inicial".'; $('instBtn').classList.add('hide'); } }
